@@ -1,6 +1,7 @@
 {
   "name": "create-react-app-with-tests",
   "version": "1.0.0",
+  "homepage": "https://gitname.github.io/react-todo",
   "description": "",
   "keywords": [],
   "main": "src/index.js",
@@ -32,9 +33,12 @@
   },
   "devDependencies": {
     "@babel/runtime": "7.13.8",
+    "gh-pages": "^6.1.1",
     "sass": "^1.74.1"
   },
   "scripts": {
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build",
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test --watchAll=false '--testResultsProcessor=<rootDir>/custom-reporter' '--silent' '--maxWorkers=2' ./",
