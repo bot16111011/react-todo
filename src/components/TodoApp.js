@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import "./todo.scss";
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import { v4 as uuidv4 } from 'uuid';
 
 export const TodoApp = () => {
   const [todos, setTodos] = useState([]);
   const [newTodo, setNewTodo] = useState('');
 
   useEffect(() => {
-    fetch('https://jsonplaceholder.typicode.com/todos')
+    fetch('https://jsonplaceholder.typicode.com/todos?_limit=10')
       .then(response => response.json())
       .then(data => {
         setTodos(data);
@@ -16,54 +19,71 @@ export const TodoApp = () => {
       });
   }, []);
 
-  const addTodo = () => {
-    if (!newTodo) return;
+  const addTodo = async () => {
+    if (newTodo.trim() === '') {
+      return;
+    }
 
-    fetch('https://jsonplaceholder.typicode.com/todos', {
-      method: 'POST',
-      body: JSON.stringify({
-        title: newTodo,
-        completed: false
-      }),
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    })
-      .then(response => response.json())
-      .then(data => {
-        setTodos([data, ...todos]);
-        setNewTodo('');
-      })
-      .catch(error => {
-        console.error('Error adding todo: ', error);
+    const newTask = {
+      idm: uuidv4(),
+      title: newTodo,
+      completed: false
+    };
+
+    try {
+      const response = await fetch('https://jsonplaceholder.typicode.com/todos', {
+        method: 'POST',
+        body: JSON.stringify(newTask),
+        headers: {
+          'Content-type': 'application/json; charset=UTF-8',
+        },
       });
+      const addedTask = await response.json();
+      setTodos((prevTodos) => [...prevTodos, addedTask]);
+      setNewTodo('');
+      toast.success('Task added successfully');
+    } catch (error) {
+      console.log('Error adding task:', error);
+      toast.error('Error adding task');
+    }
   };
+ 
 
-  const updateTodo = (id, updatedTodo) => {
-    fetch(`https://jsonplaceholder.typicode.com/todos/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(updatedTodo),
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    })
-      .then(response => response.json())
-      .then(data => {
-        const updatedTodos = todos.map(todo => (todo.id === id ? data : todo));
-        setTodos(updatedTodos);
-      })
-      .catch(error => {
-        console.error('Error updating todo: ', error);
+  const updateTodo = async (id, updatedTodo) => {
+    if (id > 200) {
+      const updatedTodos = todos.map(todo => (todo.idm === updatedTodo.idm ? { ...todo, ...updatedTodo } : todo));
+      setTodos(updatedTodos);
+      toast.success('Task updated successfully');
+      return;
+    }
+  
+    try {
+      const response = await fetch(`https://jsonplaceholder.typicode.com/todos/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(updatedTodo),
+        headers: {
+          'Content-Type': 'application/json'
+        }
       });
+      const data = await response.json();
+      const updatedTodos = todos.map(todo => (todo.id === id ? data : todo));
+      setTodos(updatedTodos);
+      toast.success('Task updated successfully');
+    } catch (error) {
+      console.error('Error updating todo: ', error);
+    }
   };
+  
+  
 
-  const deleteTodo = (id) => {
+  const deleteTodo = (id,idm) => {
     fetch(`https://jsonplaceholder.typicode.com/todos/${id}`, {
       method: 'DELETE'
     })
       .then(() => {
-        const updatedTodos = todos.filter(todo => todo.id !== id);
+        const updatedTodos = todos.filter(todo => idm===null && todo.id<=200?todo.id !== id:todo.idm !==idm);
         setTodos(updatedTodos);
+        toast.success('Task deleted successfully');
       })
       .catch(error => {
         console.error('Error deleting todo: ', error);
@@ -101,7 +121,7 @@ export const TodoApp = () => {
                   {todo.title}
                 </span>
               </span>
-              <span className="trash-icon" onClick={() => deleteTodo(todo.id)}>&#x1F5D1;</span>
+              <span className="trash-icon" onClick={() => deleteTodo(todo.id,todo.id>200?todo.idm:null)}>&#x1F5D1;</span>
             </li>
           ))}
         </ul>
